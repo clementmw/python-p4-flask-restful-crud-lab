@@ -28,7 +28,7 @@ class Plants(Resource):
 
         new_plant = Plant(
             name=data['name'],
-            image=data['image'],
+            # image=data['image'],
             price=data['price'],
         )
 
@@ -44,8 +44,41 @@ api.add_resource(Plants, '/plants')
 class PlantByID(Resource):
 
     def get(self, id):
-        plant = Plant.query.filter_by(id=id).first().to_dict()
-        return make_response(jsonify(plant), 200)
+        plant = Plant.query.get(id)
+        if not plant:
+            return {"error":"id not found"}
+        else:
+            return make_response(jsonify(plant.serialize()), 200)
+    
+    def patch(self,id):
+        data = request.get_json()
+        name = data.get("name")
+        price = data.get("price")
+         
+        existing_id = Plant.query.get(id)
+
+        if not existing_id:
+            return {"error": "id not found"}
+        else:
+            existing_id.name = name
+            existing_id.price = price
+
+            db.session.commit()
+
+            response = make_response(jsonify(existing_id.serialize()),201)
+            return response
+        
+    def delete(self,id):
+        get_id = Plant.query.get(id)
+
+        if not get_id:
+            return{"error":"id does not exist"}
+        else:
+            db.session.delete(get_id)
+            db.session.commit()
+
+            return ("record successfully deleted", 200)
+
 
 
 api.add_resource(PlantByID, '/plants/<int:id>')
